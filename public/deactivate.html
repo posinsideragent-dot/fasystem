@@ -1,0 +1,36 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deactivate assets – Fixed Assets</title><link rel="stylesheet" href="/app.css"></head>
+<body><header></header><main>
+<h1>Deactivate assets</h1>
+<p class="mute">Mark assets that are no longer in use as inactive. They disappear from the dashboard and lists. The record stays in Notion, where it can be set back to Active.</p>
+<div class="tools"><input id="q" placeholder="Search model, brand, serial, person, location"></div>
+<div class="card scroll"><table><thead><tr><th>Model</th><th>Brand</th><th>Serial</th><th>Location</th><th>Person in charge</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</main>
+<div class="modal-bg" id="bg"><div class="modal">
+  <h2 style="margin:0">Deactivate this asset?</h2><p id="sub"></p><p class="err" id="err"></p>
+  <div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn danger" id="ok">Deactivate</button></div>
+</div></div>
+<script type="module">
+import { api, esc, shell, matches, toast } from '/app.js';
+shell('/deactivate');
+let assets = [], cur = null;
+const $ = id => document.getElementById(id);
+function draw() {
+  const list = assets.filter(a => matches(a, $('q').value));
+  $('rows').innerHTML = list.length ? list.map(a => `<tr><td><b>${esc(a.model)}</b></td><td>${esc(a.brand)}</td><td>${esc(a.serial)}</td><td><span class="pill">${esc(a.location || '–')}</span></td><td>${esc(a.person)}</td><td><button class="btn danger" data-id="${a.id}">Deactivate</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty">No active assets found</td></tr>';
+}
+$('q').oninput = draw;
+$('rows').onclick = (e) => {
+  const id = e.target.dataset?.id; if (!id) return;
+  cur = assets.find(a => a.id === id);
+  $('sub').textContent = `${cur.model}${cur.serial ? ' (' + cur.serial + ')' : ''} will be marked inactive.`;
+  $('err').textContent = ''; $('bg').classList.add('open');
+};
+$('cancel').onclick = () => $('bg').classList.remove('open');
+$('ok').onclick = async () => {
+  $('ok').disabled = true;
+  try { await api('/api/deactivate', { id: cur.id }); assets = assets.filter(a => a.id !== cur.id); draw(); $('bg').classList.remove('open'); toast('Asset deactivated'); }
+  catch (x) { $('err').textContent = x.message; }
+  $('ok').disabled = false;
+};
+api('/api/assets').then(d => { assets = d.assets; draw(); }).catch(e => $('rows').innerHTML = `<tr><td colspan="6" class="err">${esc(e.message)}</td></tr>`);
+</script></body></html>

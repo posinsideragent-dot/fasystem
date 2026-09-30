@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in – Fixed Assets</title><link rel="stylesheet" href="/app.css"></head>
+<body><div class="login card"><h1>Fixed Assets</h1><p class="mute">Enter the team password to continue.</p>
+<form id="f"><input type="password" id="pw" placeholder="Password" autofocus required><p class="err" id="e"></p><button class="btn" style="width:100%">Sign in</button></form></div>
+<script type="module">
+import { api } from '/app.js';
+f.onsubmit = async (ev) => { ev.preventDefault(); e.textContent = '';
+  try { await api('/api/login', { password: pw.value }); location.href = '/'; } catch (x) { e.textContent = x.message; } };
+</script></body></html>

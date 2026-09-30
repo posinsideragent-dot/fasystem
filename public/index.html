@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard – Fixed Assets</title><link rel="stylesheet" href="/app.css"></head>
+<body><header></header><main>
+<h1>Dashboard <span class="mute" style="font-size:14px;font-weight:400">· active assets only</span></h1>
+<div class="grid g3">
+  <div class="card"><div class="mute">Total assets</div><div class="kpi" id="total">–</div></div>
+  <div class="card"><div class="mute" style="margin-bottom:6px">Assets by location</div><div id="loc"></div></div>
+  <div class="card"><div class="mute" style="margin-bottom:6px">Assets by brand</div><div id="brand"></div></div>
+</div>
+<h1 style="margin-top:28px">Active asset list</h1>
+<div class="tools"><input id="q" placeholder="Search model, brand, serial, person, location"></div>
+<div class="card scroll"><table><thead><tr><th>Model</th><th>Brand</th><th>Serial</th><th>Location</th><th>Person in charge</th><th>Date</th></tr></thead><tbody id="rows"></tbody></table></div>
+</main>
+<script type="module">
+import { api, esc, shell, matches, countBy } from '/app.js';
+shell('/');
+let assets = [];
+const bars = (el, data) => {
+  const max = Math.max(1, ...data.map(d => d.n));
+  el.innerHTML = data.length ? data.map(d => `<div class="row"><span class="lbl" title="${esc(d.name)}">${esc(d.name)}</span><span class="track"><span class="fill" style="display:block;width:${d.n / max * 100}%"></span></span><span class="n">${d.n}</span></div>`).join('') : '<div class="mute">No data</div>';
+};
+function draw() {
+  document.getElementById('total').textContent = assets.length;
+  bars(document.getElementById('loc'), countBy(assets, 'location'));
+  bars(document.getElementById('brand'), countBy(assets, 'brand', v => v.replace(/\b\w/g, c => c.toUpperCase())));
+  const list = assets.filter(a => matches(a, document.getElementById('q').value));
+  document.getElementById('rows').innerHTML = list.length ? list.map(a => `<tr><td><b>${esc(a.model)}</b></td><td>${esc(a.brand)}</td><td>${esc(a.serial)}</td><td><span class="pill">${esc(a.location || '–')}</span></td><td>${esc(a.person)}</td><td>${esc(a.date)}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">No active assets found</td></tr>';
+}
+document.getElementById('q').oninput = draw;
+api('/api/assets').then(d => { assets = d.assets; draw(); }).catch(e => document.getElementById('rows').innerHTML = `<tr><td colspan="6" class="err">${esc(e.message)}</td></tr>`);
+</script></body></html>

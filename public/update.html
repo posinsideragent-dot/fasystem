@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Update assets – Fixed Assets</title><link rel="stylesheet" href="/app.css"></head>
+<body><header></header><main>
+<h1>Update assets</h1>
+<p class="mute">Transfer an asset to a new location or change the person in charge. Active assets only.</p>
+<div class="tools"><input id="q" placeholder="Search model, brand, serial, person, location"></div>
+<div class="card scroll"><table><thead><tr><th>Model</th><th>Brand</th><th>Serial</th><th>Location</th><th>Person in charge</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</main>
+<div class="modal-bg" id="bg"><form class="modal" id="form">
+  <h2 style="margin:0" id="title"></h2><div class="mute" id="sub"></div>
+  <label for="loc">Location</label><select id="loc"></select>
+  <label for="person">Person in charge</label><input id="person" placeholder="Full name">
+  <p class="err" id="err"></p>
+  <div class="actions"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" id="save">Save changes</button></div>
+</form></div>
+<script type="module">
+import { api, esc, shell, matches, toast } from '/app.js';
+shell('/update');
+let assets = [], locations = [], cur = null;
+const $ = id => document.getElementById(id);
+function draw() {
+  const list = assets.filter(a => matches(a, $('q').value));
+  $('rows').innerHTML = list.length ? list.map(a => `<tr><td><b>${esc(a.model)}</b></td><td>${esc(a.brand)}</td><td>${esc(a.serial)}</td><td><span class="pill">${esc(a.location || '–')}</span></td><td>${esc(a.person)}</td><td><button class="btn" data-id="${a.id}">Edit</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty">No active assets found</td></tr>';
+}
+$('q').oninput = draw;
+$('rows').onclick = (e) => {
+  const id = e.target.dataset?.id; if (!id) return;
+  cur = assets.find(a => a.id === id);
+  $('title').textContent = cur.model; $('sub').textContent = [cur.brand, cur.serial].filter(Boolean).join(' · ');
+  const opts = [...locations]; if (cur.location && !opts.includes(cur.location)) opts.push(cur.location);
+  $('loc').innerHTML = '<option value="">– none –</option>' + opts.map(l => `<option ${l === cur.location ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  $('person').value = cur.person; $('err').textContent = ''; $('bg').classList.add('open');
+};
+$('cancel').onclick = () => $('bg').classList.remove('open');
+$('form').onsubmit = async (e) => {
+  e.preventDefault(); $('save').disabled = true; $('err').textContent = '';
+  try {
+    const { asset } = await api('/api/update', { id: cur.id, location: $('loc').value, person: $('person').value });
+    assets = assets.map(a => a.id === asset.id ? asset : a); draw();
+    $('bg').classList.remove('open'); toast('Saved');
+  } catch (x) { $('err').textContent = x.message; }
+  $('save').disabled = false;
+};
+api('/api/assets').then(d => { assets = d.assets; locations = d.locations; draw(); }).catch(e => $('rows').innerHTML = `<tr><td colspan="6" class="err">${esc(e.message)}</td></tr>`);
+</script></body></html>
