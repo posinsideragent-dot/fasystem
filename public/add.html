@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Add asset – Fixed Assets</title><link rel="stylesheet" href="/app.css"></head>
+<body><header></header><main>
+<h1>Add new asset</h1>
+<form class="card" id="f" style="max-width:520px">
+  <div class="modal" style="padding:0;max-width:none">
+  <label for="model">Model *</label><input id="model" required placeholder="e.g. ThinkPad T14">
+  <label for="brand">Brand</label><input id="brand" placeholder="e.g. Lenovo">
+  <label for="serial">Serial number</label><input id="serial">
+  <label for="loc">Location</label><select id="loc"></select>
+  <label for="person">Person in charge</label><input id="person" placeholder="Full name">
+  <label for="date">Date</label><input id="date" type="date">
+  <p class="err" id="err"></p>
+  <div class="actions"><button class="btn" id="save">Add asset</button></div>
+  </div>
+</form>
+</main>
+<script type="module">
+import { api, shell, toast } from '/app.js';
+shell('/add');
+const $ = id => document.getElementById(id);
+$('date').value = new Date().toISOString().slice(0, 10);
+api('/api/assets').then(d => { $('loc').innerHTML = '<option value="">– none –</option>' + d.locations.map(l => `<option>${l.replace(/[&<>"]/g, '')}</option>`).join(''); });
+$('f').onsubmit = async (e) => {
+  e.preventDefault(); $('save').disabled = true; $('err').textContent = '';
+  try {
+    const { asset } = await api('/api/create', { model: $('model').value, brand: $('brand').value, serial: $('serial').value, location: $('loc').value, person: $('person').value, date: $('date').value });
+    toast(`Added ${asset.model}`);
+    ['model', 'brand', 'serial', 'person'].forEach(k => $(k).value = ''); $('loc').value = ''; $('model').focus();
+  } catch (x) { $('err').textContent = x.message; }
+  $('save').disabled = false;
+};
+</script></body></html>

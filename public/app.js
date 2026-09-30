@@ -17,7 +17,7 @@ export function toast(msg) {
 }
 
 export function shell(active) {
-  const links = [['/', 'Dashboard'], ['/update', 'Update assets'], ['/deactivate', 'Deactivate assets']];
+  const links = [['/', 'Dashboard'], ['/add', 'Add asset'], ['/update', 'Update assets'], ['/deactivate', 'Deactivate assets']];
   document.querySelector('header').innerHTML = `<div class="bar"><span class="logo">Fixed Assets</span><nav>${links.map(([h, l]) => `<a href="${h}" class="${h === active ? 'on' : ''}">${l}</a>`).join('')}</nav><button class="btn ghost" id="out">Sign out</button></div>`;
   document.getElementById('out').onclick = async () => { await fetch('/api/logout', { method: 'POST' }); location.href = '/login'; };
 }

@@ -5,8 +5,8 @@ Web app on top of a Notion database. Pages: Dashboard, Update assets, Deactivate
 ## Deploy (about 10 minutes)
 
 ### 1. Create the Notion connection (once)
-1. Go to https://www.notion.so/profile/integrations and click **New integration** (type: Internal).
-2. Under Capabilities keep Read, Update and Insert content on. Save, then copy the **Internal Integration Secret**.
+1. In Notion open **Settings**, then **Connections** (turn on Developer Mode if shown). Click **+ New connection**, name it and pick your workspace. Only a workspace owner can do this.
+2. Click the ••• menu next to it and retrieve the internal connection token. This is your NOTION_TOKEN.
 3. Open the **Fixed Assets** database in Notion, click the ••• menu, then **Connections**, and add your integration.
 
 ### 2. Put the code on Vercel
@@ -25,11 +25,12 @@ Web app on top of a Notion database. Pages: Dashboard, Update assets, Deactivate
 
 ## Using it
 - **Dashboard**: total, by location, by brand, and the list. Active assets only.
+- **Add asset**: create a new asset (Model required). It starts as Active. A duplicate serial number is rejected.
 - **Update assets**: Edit an asset to change Location or Person in charge.
 - **Deactivate assets**: sets Status to Inactive. Inactive assets vanish from every page. To bring one back, set Status to Active in Notion.
 
 ## Notes
-- New assets are added in Notion. Set Status to Active (rows with no Status also count as Active).
+- Assets added directly in Notion also work. Rows with no Status count as Active.
 - New locations: add an option to the Location property in Notion. The Update page picks it up.
 - To change the password, edit APP_PASSWORD in Vercel and redeploy.
 - Run `npm test` to check the API logic (uses a mocked Notion).

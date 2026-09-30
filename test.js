@@ -15,6 +15,13 @@ globalThis.fetch = async (url, opt = {}) => {
   const j = (o) => ({ ok: true, json: async () => o });
   if (url.endsWith('/databases/db1/query')) return j({ results: pages, has_more: false });
   if (url.endsWith('/databases/db1')) return j({ properties: { Location: { select: { options: [{ name: 'Office' }, { name: 'Store' }] } } } });
+  if (url.endsWith('/pages') && opt.method === 'POST') {
+    const pr = JSON.parse(opt.body).properties; const id = String(pages.length + 1);
+    const p = { id, properties: { Model: { title: pr.Model.title.map(t => ({ plain_text: t.text.content })) },
+      Brand: { rich_text: pr.Brand.rich_text.map(t => ({ plain_text: t.text.content })) }, 'Serial Number': { rich_text: pr['Serial Number'].rich_text.map(t => ({ plain_text: t.text.content })) },
+      'Person in Charge': { rich_text: [] }, Location: pr.Location || { select: null }, Date: pr.Date || { date: null }, Status: pr.Status } };
+    pages.push(p); return j(p);
+  }
   if (url.includes('/pages/')) {
     const id = url.split('/').pop(); const p = pages.find(x => x.id === id); const b = JSON.parse(opt.body).properties;
     if (b.Location) p.properties.Location = b.Location; if (b['Person in Charge']) p.properties['Person in Charge'] = { rich_text: b['Person in Charge'].rich_text.map(t => ({ plain_text: t.text.content })) };
@@ -40,4 +47,10 @@ assert.equal(r.body.asset.location, 'Store'); assert.equal(r.body.asset.person, 
 r = await run('./api/deactivate.js', { method: 'POST', cookie, body: { id: '2' } }); assert.equal(r.body.asset.status, 'Inactive');
 r = await run('./api/assets.js', { cookie }); assert.deepEqual(r.body.assets.map(a => a.id), ['1']);
 r = await run('./api/deactivate.js', { method: 'POST', body: { id: '1' } }); assert.equal(r.code, 401);
+r = await run('./api/create.js', { method: 'POST', body: { model: 'A' } }); assert.equal(r.code, 401);
+r = await run('./api/create.js', { method: 'POST', cookie, body: { model: '  ' } }); assert.equal(r.code, 400);
+r = await run('./api/create.js', { method: 'POST', cookie, body: { model: 'Dell 5420', brand: 'Dell', serial: 'SN-9', location: 'Office', date: '2026-09-30' } });
+assert.equal(r.code, 201); assert.equal(r.body.asset.status, 'Active'); assert.equal(r.body.asset.location, 'Office');
+r = await run('./api/create.js', { method: 'POST', cookie, body: { model: 'Dup', serial: 'sn-9' } }); assert.equal(r.code, 409);
+r = await run('./api/assets.js', { cookie }); assert.ok(r.body.assets.some(a => a.model === 'Dell 5420'));
 console.log('all tests passed');
